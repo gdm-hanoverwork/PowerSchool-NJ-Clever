@@ -1,0 +1,61 @@
+<queries>
+	<query name="com.hanovertwpschools.core.clever.schools" flattened="true" tags="">
+		<summary>Clever Schools Export</summary>
+   		<description>Schools information</description>
+		<columns>
+			<column column="schools.school_number">school_id</column>
+			<column column="schools.name">name</column>
+			<column column="schools.school_number">school_number</column>
+			<column column="schools.address">address</column>
+			<column column="schools.low_grade">low_grade</column>
+			<column column="schools.high_grade">high_grade</column>
+			<column column="schools.principal">principal</column>
+			<column column="schools.principalphone">principalphone</column>
+			<column column="schools.principalemail">principalemail</column>
+			<column column="schools.schoolcity">schoolcity</column>
+			<column column="schools.schoolstate">schoolstate</column>
+			<column column="schools.schoolzip">schoolzip</column>
+			<column column="schools.schoolphone">schoolphone</column>
+			<column column="schools.abbreviation">ext.school_abbr</column>
+			<column column="schools.schoolgroup">schoolgroup</column>
+			<column column="schools.bulletinemail">bulletinemail</column>
+			<column column="schools.alternate_school_number">alternate_school_number</column>
+			<column column="schools.schooladdress">schooladdress</column>
+			<column column="schools.schoolfax">schoolfax</column>
+			<column column="schools.schoolcountry">schoolcountry</column>
+			<column column="schools.asstprincipalphone">asstprincipalphone</column>
+			<column column="schools.asstprincipalemail">asstprincipalemail</column>
+			<column column="schools.asstprincipal">asstprincipal</column>
+		</columns>
+		<sql>
+			<![CDATA[
+				select 
+				schools.school_number "school_id",
+				schools.name,
+				schools.countynbr || '2000' || lpad(schools.school_number,3,0) "school_number",
+				schools.address,
+				schools.low_grade,
+				schools.high_grade,
+				schools.principal,
+				schools.principalphone,
+				schools.principalemail,
+				schools.schoolcity,
+				schools.schoolstate,
+				schools.schoolzip,
+				schools.schoolphone,
+				schools.abbreviation "ext.school_abbr",
+				schools.schoolgroup,
+				schools.bulletinemail,
+				schools.alternate_school_number,
+				schools.schooladdress,
+				schools.schoolfax,
+				schools.schoolcountry,
+				schools.asstprincipalphone,
+				schools.asstprincipalemail,
+				schools.asstprincipal
+				 FROM SCHOOLS
+				WHERE school_number < 100
+			]]>
+		</sql>
+	</query>
+</queries>

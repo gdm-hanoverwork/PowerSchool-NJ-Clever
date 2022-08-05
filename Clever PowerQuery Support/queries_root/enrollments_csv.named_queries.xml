@@ -1,0 +1,90 @@
+<queries>
+	<query name="com.hanovertwpschools.core.clever.enrollments" flattened="true">
+		<summary>Clever Enrollments PQ</summary>
+		<description>Enrollment information</description>
+		<columns>
+			<column column="cc.schoolid" description="school_number">clever.School_id</column>
+			<column column="cc.sectionid" description="section_id">clever.section_id</column>
+			<column column="cc.studentid" description="student_dcid">clever.student_id</column>
+		</columns>
+		<sql>
+			<![CDATA[
+WITH Preferred_Range AS (
+	SELECT
+		to_char(VALUE)
+		/* +1 */
+		AS high,
+		to_char(VALUE)
+		/* -1 */
+		AS low
+	FROM
+		prefs
+	WHERE
+		NAME = 'coursearchiveyear'
+),
+first_day_or_today AS (
+	SELECT
+		CASE
+			WHEN terms.firstday > SYSDATE THEN terms.firstday
+			ELSE SYSDATE
+		END effdate
+	FROM
+		terms
+	WHERE
+		terms.id = (
+			EXTRACT(
+				YEAR
+				FROM
+					SYSDATE
+			) + CASE
+				WHEN EXTRACT(
+					MONTH
+					FROM
+						SYSDATE
+				) >= 7 THEN 1
+				ELSE 0
+			END - 1991
+		) * 100
+		AND terms.schoolid = 0
+		AND terms.isyearrec = 1
+)
+SELECT
+	cc.schoolid school_id,
+	cc.sectionid section_id,
+	cc.studentid student_id
+FROM
+	cc
+	LEFT JOIN students ON students.id = cc.studentid
+WHERE
+	cc.schoolid NOT IN (0, 999999)
+	/* 	AND cc.dateenrolled <= (
+	 SELECT
+	 effdate + 5
+	 FROM
+	 first_day_or_today
+	 )
+	 AND cc.dateleft > (
+	 SELECT
+	 effdate - 5
+	 FROM
+	 first_day_or_today
+	 ) */
+	AND cc.termid BETWEEN (
+		SELECT
+			low || '00'
+		FROM
+			Preferred_Range
+	)
+	AND (
+		SELECT
+			high || '99'
+		FROM
+			Preferred_Range
+	)
+	AND cc.sectionid > 0
+	AND students.enroll_status IN (-1, 0)
+	AND students.schoolid NOT IN (0, 999999999)
+			]]>
+		</sql>
+	</query>
+</queries>

@@ -1,0 +1,80 @@
+<queries>
+	<query name="com.hanovertwpschools.core.clever.teachers" flattened="true">
+		<summary>Clever Teacher Export</summary>
+		<description>Teacher Information</description>
+		<columns>
+			<column column="teachers.schoolid" description="school_id">000_School_id</column>
+			<column column="teachers.users_dcid" description="teacher_id">001_Teacher_id</column>
+			<column column="teachers.teachernumber" description="teacher_number">002_Teacher_number</column>
+			<column column="s_nj_usr_x.StaffMemberID" description="State_teacher_id">003_State_teacher_id</column>
+			<column column="users.email_addr" description="teacher_email">004_teacher_email</column>
+			<column column="users.First_Name" description="first_name">005_First_name</column>
+			<column column="users.Middle_name" description="middle_name">006_Middle_name</column>
+			<column column="users.Last_Name" description="last_name">007_Last_name</column>
+			<column column="users.title" description="department">008_department</column>
+			<column column="users.title" description="title">009_title</column>
+			<column column="users.email_addr" description="username">010_username</column>
+			<column column="users.title" description="password">011_password</column>
+			<column column="users.title" description="ext.group_name">012_ext.group_name</column>
+		</columns>
+		<sql>
+			<![CDATA[
+WITH My_Schools AS (
+	SELECT
+		school_number
+	FROM
+		SCHOOLS
+	WHERE
+		SCHOOL_NUMBER < 100
+	UNION
+	SELECT
+		0
+	FROM
+		DUAL
+)
+SELECT
+	CASE
+		My_SCHOOLS.school_number
+		WHEN 0 THEN 'DEFAULT_DISTRICT_OFFICE'
+		ELSE to_char(My_Schools.school_number)
+	END "school_id",
+	users.dcid "teacher_id",
+	users.teachernumber "teacher_number",
+	s_nj_usr_x.StaffMemberID "State_Teacher_id",
+	users.email_addr "teacher_email",
+	users.first_name "first_name",
+	users.middle_name "middle_name",
+	users.last_name "last_name",
+	'' department,
+	users.title title,
+	users.email_addr username,
+	'' password,
+	groups.name "ext.group_name"
+FROM
+	users
+	LEFT JOIN s_NJ_usr_x ON s_NJ_usr_x.usersdcid = users.dcid
+	LEFT JOIN gen groups ON groups.cat = 'groups'
+	AND groups.id = users.groupvalue
+	LEFT JOIN u_def_ext_users ON u_def_ext_users.usersdcid = users.dcid
+	LEFT JOIN My_Schools ON instr(users.canchangeschool, My_Schools.school_number) > 0
+WHERE
+	users.ptaccess = 1
+	AND users.dcid IN (
+		SELECT
+			schoolstaff.users_dcid
+		FROM
+			schoolstaff
+		WHERE
+			schoolstaff.status = 1
+	)
+	AND (
+		u_def_ext_users.clever_exclude IS NULL
+		OR u_def_ext_users.clever_exclude = 0
+	)
+ORDER BY
+	users.dcid,
+	MY_SCHOOLS.school_number
+			]]>
+		</sql>
+	</query>
+</queries>

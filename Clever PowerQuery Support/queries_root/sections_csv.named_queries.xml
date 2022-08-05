@@ -1,0 +1,345 @@
+<queries>
+    <query name="com.hanovertwpschools.core.clever.sections" coreTable="sections" flattened="true" tags="">
+        <summary>Clever Export for Sections</summary>
+        <description>Clever - Sections List - Current Year</description>
+        <columns>
+			<column column="sections.id" description="Section_id">clever.Section_id</column>
+			<column column="courses.course_number" description="Course_number">clever.Course_number</column>
+			<column column="schools.school_number" description="School_id">clever.School_id</column>
+			<column column="teachers.users_dcid" description="Teacher_id">clever.Teacher_id</column>
+			<column column="teachers.users_dcid" description="Teacher_2_id">clever.Teacher_2_id</column>
+			<column column="teachers.users_dcid" description="Teacher_3_id">clever.Teacher_3_id</column>
+			<column column="teachers.users_dcid" description="Teacher_4_id">clever.Teacher_4_id</column>
+			<column column="teachers.users_dcid" description="Teacher_5_id">clever.Teacher_5_id</column>
+			<column column="teachers.users_dcid" description="Teacher_6_id">clever.Teacher_6_id</column>
+			<column column="teachers.users_dcid" description="Teacher_7_id">clever.Teacher_7_id</column>
+			<column column="teachers.users_dcid" description="Teacher_8_id">clever.Teacher_8_id</column>
+			<column column="teachers.users_dcid" description="Teacher_9_id">clever.Teacher_9_id</column>
+			<column column="teachers.users_dcid" description="Teacher_10_id">clever.Teacher_10_id</column>
+			<column column="sections.section_number" description="Section_number">clever.Section_number</column>
+			<column column="courses.course_name" description="Grade">clever.Grade</column>
+			<column column="courses.course_name" description="Course_name">clever.Course_name</column>
+			<column column="courses.course_name" description="Course_description">clever.course_description</column>
+			<column column="sections.external_expression" description="Period">clever.Period</column>
+			<column column="courses.course_name" description="subject">clever.Subject</column>
+			<column column="terms.abbreviation" description="Term_name">clever.Term_name</column>
+			<column column="terms.abbreviation" description="Term_start">clever.Term_start</column>
+			<column column="terms.abbreviation" description="Term_end">clever.Term_end</column>
+        </columns>
+        <sql>
+            <![CDATA[
+WITH LEADROLE AS (
+	SELECT
+		ROLEDEF.ID AS roleId
+	FROM
+		ROLEDEF
+	WHERE
+		ROLEDEF.ROLEKEY = 'com.pearson.powerschool.coteach.primary.teacher'
+		/* Only grab the Lead Role for Primary Teachers... */
+),
+CO_TEACHER_ROLES AS (
+	SELECT
+		roledef.id,
+		roledef.name,
+		roledef.rolekey
+	FROM
+		roledef
+	WHERE
+		/* Trim the extra fat out first... */
+		ROLEKEY LIKE 'com.pearson.powerschool.coteach.%'
+		/* Below is the primary teacher role. */
+		AND ROLEKEY != 'com.pearson.powerschool.coteach.primary.teacher'
+		/* 	Below are the 'standard' co-teacher roles. */
+		AND ROLEKEY NOT IN (
+			'com.pearson.powerschool.coteach.class.observer',
+			'com.pearson.powerschool.coteach.job.share.teacher',
+			'com.pearson.powerschool.coteach.primary.teacher',
+			'com.pearson.powerschool.coteach.teacher.aide'
+		)
+		/* Below is one created at our district, as an example, I've commented it out
+		 If you know which one you want to whack, go for it. */
+		/* 	AND ROLEKEY != 'com.pearson.powerschool.coteach.co.teacher' */
+		/* But I haven't used this to exclude at all... */
+),
+Preferred_Range AS (
+	SELECT
+		/* Intended to filter out based on what is the current year! */
+		to_char(VALUE)
+		/* +1 */
+		AS high,
+		to_char(VALUE)
+		/* -1 */
+		AS low
+	FROM
+		prefs
+	WHERE
+		NAME = 'coursearchiveyear'
+),
+My_Teachers AS (
+	SELECT
+		teachers.id,
+		teachers.users_dcid,
+		teachers.lastfirst
+	FROM
+		teachers
+		/* 	WHERE
+		 teachers.status = 1
+		 */
+),
+My_SectionTeachers AS (
+	SELECT
+		sectionteacher.id,
+		sections.termid,
+		sections.schoolid,
+		sections.course_number,
+		sectionteacher.teacherid,
+		sectionteacher.sectionid,
+		sectionteacher.roleid,
+		CASE
+			WHEN sectionteacher.roleId = (
+				SELECT
+					roleId
+				FROM
+					LEADROLE
+			) THEN 'true'
+			ELSE 'false'
+		END AS primary_,
+		sectionteacher.start_date,
+		sectionteacher.end_date,
+		sectionteacher.allocation,
+		sectionteacher.priorityorder,
+		sectionteacher.notes,
+		sectionteacher.sectionnickname
+	FROM
+		sectionteacher
+		INNER JOIN sections ON sections.id = sectionteacher.sectionid
+	WHERE
+		sections.termid BETWEEN (
+			SELECT
+				low || '00'
+			FROM
+				Preferred_Range
+		)
+		AND (
+			SELECT
+				high || '99'
+			FROM
+				Preferred_Range
+		)
+)
+SELECT
+	My_SectionTeachers.sectionid,
+	My_SectionTeachers.course_number,
+	My_SectionTeachers.schoolid,
+	/* PrTT.id "teacher_id", */
+	PrTT.users_dcid "teacher_id",
+	/* PrTT.lastfirst, */
+	/* CoTT_1.id "teacher_2_id", */
+	CoTT_1.users_dcid "teacher_2_id",
+	/* CoTT_1.lastFirst "teacher_2_lastFirst", */
+	CoTT_2.users_dcid "teacher_3_id",
+	CoTT_3.users_dcid "teacher_4_id",
+	CoTT_4.users_dcid "teacher_5_id",
+	CoTT_5.users_dcid "teacher_6_id",
+	CoTT_6.users_dcid "teacher_7_id",
+	CoTT_7.users_dcid "teacher_8_id",
+	CoTT_8.users_dcid "teacher_9_id",
+	CoTT_9.users_dcid "teacher_10_id",
+	sections.section_number,
+	'' grade,
+	courses.course_name,
+	'' course_description,
+	sections.external_expression period,
+	'' subject,
+	CASE
+		WHEN terms.isyearrec = 1 THEN 'Year'
+		ELSE terms.abbreviation
+	END term_name,
+	to_char(terms.firstday, 'MM/DD/YYYY') term_start,
+	to_char(terms.lastday, 'MM/DD/YYYY') term_end
+FROM
+	Sections
+	INNER JOIN (select * from My_SectionTeachers) MySectionTeachers ON My_SectionTeachers.id = Sections.id
+	INNER JOIN terms ON terms.id = sections.termid
+	AND terms.yearid BETWEEN (
+		SELECT
+			low
+		FROM
+			Preferred_Range
+	)
+	AND (
+		SELECT
+			high
+		FROM
+			Preferred_Range
+	)
+	AND terms.schoolid = sections.schoolid
+	INNER JOIN courses ON courses.course_number = sections.course_number
+	/* INNER JOIN My_SectionTeachers ON My_SectionTeachers.id = Sections.id */
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_SectionTeachers
+	) PT ON PT.sectionid = My_SectionTeachers.sectionid
+	AND PT.priorityorder = 1
+	AND PT.primary_ = 'true'
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_Teachers
+	) PrTT ON PrTT.id = PT.teacherid
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_SectionTeachers
+	) Co_1 ON Co_1.sectionid = My_SectionTeachers.sectionid
+	AND Co_1.primary_ = 'false'
+	AND Co_1.priorityorder = 1
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_Teachers
+	) CoTT_1 ON CoTT_1.id = Co_1.teacherid
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_SectionTeachers
+	) Co_2 ON Co_2.sectionid = My_SectionTeachers.sectionid
+	AND Co_2.primary_ = 'false'
+	AND Co_2.priorityorder = 2
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_Teachers
+	) CoTT_2 ON CoTT_2.id = Co_2.teacherid
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_SectionTeachers
+	) Co_3 ON Co_3.sectionid = My_SectionTeachers.sectionid
+	AND Co_3.primary_ = 'false'
+	AND Co_3.priorityorder = 3
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_Teachers
+	) CoTT_3 ON CoTT_3.id = Co_3.teacherid
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_SectionTeachers
+	) Co_4 ON Co_4.sectionid = My_SectionTeachers.sectionid
+	AND Co_4.primary_ = 'false'
+	AND Co_4.priorityorder = 4
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_Teachers
+	) CoTT_4 ON CoTT_4.id = Co_4.teacherid
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_SectionTeachers
+	) Co_5 ON Co_5.sectionid = My_SectionTeachers.sectionid
+	AND Co_5.primary_ = 'false'
+	AND Co_5.priorityorder = 5
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_Teachers
+	) CoTT_5 ON CoTT_5.id = Co_5.teacherid
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_SectionTeachers
+	) Co_6 ON Co_6.sectionid = My_SectionTeachers.sectionid
+	AND Co_6.primary_ = 'false'
+	AND Co_6.priorityorder = 6
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_Teachers
+	) CoTT_6 ON CoTT_6.id = Co_6.teacherid
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_SectionTeachers
+	) Co_7 ON Co_7.sectionid = My_SectionTeachers.sectionid
+	AND Co_7.primary_ = 'false'
+	AND Co_7.priorityorder = 7
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_Teachers
+	) CoTT_7 ON CoTT_7.id = Co_7.teacherid
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_SectionTeachers
+	) Co_8 ON Co_8.sectionid = My_SectionTeachers.sectionid
+	AND Co_8.primary_ = 'false'
+	AND Co_8.priorityorder = 8
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_Teachers
+	) CoTT_8 ON CoTT_8.id = Co_8.teacherid
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_SectionTeachers
+	) Co_9 ON Co_9.sectionid = My_SectionTeachers.sectionid
+	AND Co_9.primary_ = 'false'
+	AND Co_9.priorityorder = 9
+	LEFT JOIN (
+		SELECT
+			*
+		FROM
+			My_Teachers
+	) CoTT_9 ON CoTT_9.id = Co_9.teacherid
+WHERE
+	courses.course_name NOT IN (
+		'Cafe Duty',
+		'Hall Duty/Coverage',
+		'Staff Lunch',
+		'Staff Prep',
+		'Team Planning 6',
+		'Team Planning 7',
+		'Team Planning 8'
+	)
+	/* ,
+	 /* 			'Lunch',
+	 'Lunch 6',
+	 'Lunch 7',
+	 'Lunch 8',
+	 'Study 6',
+	 'Study 7',
+	 'Study 8',
+	 'Study Hall' 
+	 /* Ignore the staff-scheduling courses, but not the student ones! */
+ORDER BY
+	sections.sectionid,
+	PT.teacherid
+		]]>
+        </sql>
+    </query>
+</queries>

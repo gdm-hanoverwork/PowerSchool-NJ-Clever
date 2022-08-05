@@ -1,0 +1,66 @@
+<queries>
+	<query name="com.hanovertwpschools.core.clever.staff" coreTable="users" flattened="true" tags="">
+		<summary>Clever Staff PowerQuery</summary>
+		<description>Staff Information</description>
+		<columns>
+			<column column="users.first_name" description="school_id">000_School_id</column>
+			<column column="users.dcid" description="staff_id">001_staff_id</column>
+			<column column="users.email_addr" description="staff_email">002_staff_email</column>
+			<column column="users.First_Name" description="first_name">003_First_name</column>
+			<column column="users.Last_Name" description="last_name">004_Last_name</column>
+			<column column="users.title" description="department">005_department</column>
+			<column column="users.title" description="title">006_title</column>
+			<column column="users.email_addr" description="username">007_username</column>
+			<column column="users.title" description="password">008_password</column>
+			<column column="users.title" description="role">009_Role</column>
+			<column column="users.title" description="ext.group_name">10_ext.group_name</column>
+		</columns>
+		<sql>
+			<![CDATA[
+WITH My_Schools AS (
+	SELECT
+		school_number
+	FROM
+		SCHOOLS
+	WHERE
+		SCHOOL_NUMBER < 100
+)
+SELECT
+	CASE WHEN ( MY_Schools.school_number > 100 OR MY_Schools.school_number = 0) THEN 'DEFAULT_DISTRICT_OFFICE' ELSE to_char(MY_Schools.school_number) END "school_id",
+	users.dcid "teacher_id",
+	users.email_addr "staff_email",
+	users.first_name "first_name",
+	users.last_name "last_name",
+	'' department,
+	users.title title,
+	users.email_addr username,
+	'' password,
+	'' role,
+	groups.name "ext.group_name"
+FROM
+	users
+	LEFT JOIN s_NJ_usr_x ON s_NJ_usr_x.usersdcid = users.dcid
+	LEFT JOIN gen groups ON groups.cat = 'groups'
+	AND groups.id = users.groupvalue
+	LEFT JOIN u_def_ext_users ON u_def_ext_users.usersdcid = users.dcid
+	LEFT JOIN ( select * from My_Schools ) My_Schools ON instr(users.canchangeschool, My_Schools.school_number) > 0
+WHERE
+	users.psaccess = 1
+	AND users.dcid IN (
+		SELECT
+			schoolstaff.users_dcid
+		FROM
+			schoolstaff
+		WHERE
+			schoolstaff.status = 1
+	)
+	AND (
+		u_def_ext_users.clever_exclude IS NULL
+		OR u_def_ext_users.clever_exclude = 0
+	)
+ORDER BY
+	users.dcid
+			]]>
+		</sql>
+	</query>
+</queries>
