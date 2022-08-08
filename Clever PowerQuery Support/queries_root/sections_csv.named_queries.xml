@@ -1,30 +1,30 @@
 <queries>
     <query name="com.hanovertwpschools.core.clever.sections" coreTable="sections" flattened="true" tags="">
-        <summary>Clever Export for Sections</summary>
+        <summary>Clever Sections Export (sections.csv)</summary>
         <description>Clever - Sections List - Current Year</description>
         <columns>
-			<column column="sections.id" description="Section_id">clever.Section_id</column>
-			<column column="courses.course_number" description="Course_number">clever.Course_number</column>
-			<column column="schools.school_number" description="School_id">clever.School_id</column>
-			<column column="teachers.users_dcid" description="Teacher_id">clever.Teacher_id</column>
-			<column column="teachers.users_dcid" description="Teacher_2_id">clever.Teacher_2_id</column>
-			<column column="teachers.users_dcid" description="Teacher_3_id">clever.Teacher_3_id</column>
-			<column column="teachers.users_dcid" description="Teacher_4_id">clever.Teacher_4_id</column>
-			<column column="teachers.users_dcid" description="Teacher_5_id">clever.Teacher_5_id</column>
-			<column column="teachers.users_dcid" description="Teacher_6_id">clever.Teacher_6_id</column>
-			<column column="teachers.users_dcid" description="Teacher_7_id">clever.Teacher_7_id</column>
-			<column column="teachers.users_dcid" description="Teacher_8_id">clever.Teacher_8_id</column>
-			<column column="teachers.users_dcid" description="Teacher_9_id">clever.Teacher_9_id</column>
-			<column column="teachers.users_dcid" description="Teacher_10_id">clever.Teacher_10_id</column>
-			<column column="sections.section_number" description="Section_number">clever.Section_number</column>
-			<column column="courses.course_name" description="Grade">clever.Grade</column>
-			<column column="courses.course_name" description="Course_name">clever.Course_name</column>
-			<column column="courses.course_name" description="Course_description">clever.course_description</column>
-			<column column="sections.external_expression" description="Period">clever.Period</column>
-			<column column="courses.course_name" description="subject">clever.Subject</column>
-			<column column="terms.abbreviation" description="Term_name">clever.Term_name</column>
-			<column column="terms.abbreviation" description="Term_start">clever.Term_start</column>
-			<column column="terms.abbreviation" description="Term_end">clever.Term_end</column>
+			<column column="sections.id" description="000_Section_id">000_Section_id</column>
+			<column column="courses.course_number" description="Course_number">001_Course_number</column>
+			<column column="schools.school_number" description="School_id">002_School_id</column>
+			<column column="teachers.users_dcid" description="Teacher_id">003_Teacher_id</column>
+			<column column="teachers.users_dcid" description="Teacher_2_id">004_Teacher_2_id</column>
+			<column column="teachers.users_dcid" description="Teacher_3_id">005_Teacher_3_id</column>
+			<column column="teachers.users_dcid" description="Teacher_4_id">006_Teacher_4_id</column>
+			<column column="teachers.users_dcid" description="Teacher_5_id">007_Teacher_5_id</column>
+			<column column="teachers.users_dcid" description="Teacher_6_id">008_Teacher_6_id</column>
+			<column column="teachers.users_dcid" description="Teacher_7_id">009_Teacher_7_id</column>
+			<column column="teachers.users_dcid" description="Teacher_8_id">010_Teacher_8_id</column>
+			<column column="teachers.users_dcid" description="Teacher_9_id">011_Teacher_9_id</column>
+			<column column="teachers.users_dcid" description="Teacher_10_id">012_Teacher_10_id</column>
+			<column column="sections.section_number" description="Section_number">013_Section_number</column>
+			<column column="courses.course_name" description="Grade">014_Grade</column>
+			<column column="courses.course_name" description="Course_name">015_Course_name</column>
+			<column column="courses.course_name" description="Course_description">016_course_description</column>
+			<column column="sections.external_expression" description="Period">017_Period</column>
+			<column column="courses.course_name" description="subject">018_Subject</column>
+			<column column="terms.abbreviation" description="Term_name">019_Term_name</column>
+			<column column="terms.abbreviation" description="Term_start">020_Term_start</column>
+			<column column="terms.abbreviation" description="Term_end">021_Term_end</column>
         </columns>
         <sql>
             <![CDATA[
@@ -112,7 +112,7 @@ My_SectionTeachers AS (
 		sectionteacher.sectionnickname
 	FROM
 		sectionteacher
-		INNER JOIN sections ON sections.id = sectionteacher.sectionid
+		INNER JOIN sections ON sections.id = sectionteacher.id
 	WHERE
 		sections.termid BETWEEN (
 			SELECT
@@ -136,7 +136,7 @@ SELECT
 	/* PrTT.lastfirst, */
 	/* CoTT_1.id "teacher_2_id", */
 	CoTT_1.users_dcid "teacher_2_id",
-	/* CoTT_1.lastFirst "teacher_2_lastFirst", */
+	CoTT_1.lastFirst "teacher_2_lastFirst",
 	CoTT_2.users_dcid "teacher_3_id",
 	CoTT_3.users_dcid "teacher_4_id",
 	CoTT_4.users_dcid "teacher_5_id",
@@ -152,14 +152,14 @@ SELECT
 	sections.external_expression period,
 	'' subject,
 	CASE
-		WHEN terms.isyearrec = 1 THEN 'Year'
+		WHEN terms.isyearrec = 1 THEN 'Year' || terms.abbreviation
 		ELSE terms.abbreviation
 	END term_name,
 	to_char(terms.firstday, 'MM/DD/YYYY') term_start,
 	to_char(terms.lastday, 'MM/DD/YYYY') term_end
 FROM
 	Sections
-	INNER JOIN (select * from My_SectionTeachers) MySectionTeachers ON My_SectionTeachers.id = Sections.id
+	INNER JOIN (select * from My_SectionTeachers) My_SectionTeachers ON My_SectionTeachers.id = Sections.id
 	INNER JOIN terms ON terms.id = sections.termid
 	AND terms.yearid BETWEEN (
 		SELECT
@@ -337,7 +337,7 @@ WHERE
 	 'Study Hall' 
 	 /* Ignore the staff-scheduling courses, but not the student ones! */
 ORDER BY
-	sections.sectionid,
+	My_sectionTeachers.sectionid,
 	PT.teacherid
 		]]>
         </sql>
