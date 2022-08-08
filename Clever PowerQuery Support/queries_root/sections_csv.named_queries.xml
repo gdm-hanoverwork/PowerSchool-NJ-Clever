@@ -136,7 +136,7 @@ SELECT
 	/* PrTT.lastfirst, */
 	/* CoTT_1.id "teacher_2_id", */
 	CoTT_1.users_dcid "teacher_2_id",
-	CoTT_1.lastFirst "teacher_2_lastFirst",
+	/* CoTT_1.lastFirst "teacher_2_lastFirst", */
 	CoTT_2.users_dcid "teacher_3_id",
 	CoTT_3.users_dcid "teacher_4_id",
 	CoTT_4.users_dcid "teacher_5_id",
@@ -152,7 +152,7 @@ SELECT
 	sections.external_expression period,
 	'' subject,
 	CASE
-		WHEN terms.isyearrec = 1 THEN 'Year' || terms.abbreviation
+		WHEN terms.isyearrec = 1 THEN 'Year' /* || ' ' || terms.abbreviation */
 		ELSE terms.abbreviation
 	END term_name,
 	to_char(terms.firstday, 'MM/DD/YYYY') term_start,
