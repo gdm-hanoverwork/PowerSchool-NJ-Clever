@@ -77,11 +77,14 @@ Preferred_Range AS (
 ),
 My_Teachers AS (
 	SELECT
-		teachers.id,
-		teachers.users_dcid,
-		teachers.lastfirst
+		schoolstaff.id,
+		schoolstaff.users_dcid,
+		users.lastfirst
 	FROM
-		teachers
+	schoolstaff 
+	INNER JOIN users ON schoolstaff.users_dcid = users.dcid
+	/* teachers *.
+	
 		/* 	WHERE
 		 teachers.status = 1
 		 */
@@ -102,6 +105,8 @@ My_SectionTeachers AS (
 				FROM
 					LEADROLE
 			) THEN 'true'
+			WHEN sectionteacher.roleid IS NULL
+			then 'true'
 			ELSE 'false'
 		END AS primary_,
 		sectionteacher.start_date,
@@ -112,8 +117,8 @@ My_SectionTeachers AS (
 		sectionteacher.sectionnickname
 	FROM
 		sectionteacher
-		INNER JOIN sections ON sections.id = sectionteacher.id
-	WHERE
+		INNER JOIN sections ON sections.id = sectionteacher.sectionid
+/* 	WHERE
 		sections.termid BETWEEN (
 			SELECT
 				low || '00'
@@ -125,18 +130,19 @@ My_SectionTeachers AS (
 				high || '99'
 			FROM
 				Preferred_Range
-		)
+		) */
 )
 SELECT
-	My_SectionTeachers.sectionid,
+my_sectionteachers.id,
+	My_SectionTeachers.sectionid "sectionid",
 	My_SectionTeachers.course_number,
 	My_SectionTeachers.schoolid,
-	/* PrTT.id "teacher_id", */
+/* 	PrTT.id "teacher_id", */
 	PrTT.users_dcid "teacher_id",
-	/* PrTT.lastfirst, */
-	/* CoTT_1.id "teacher_2_id", */
+/*	PrTT.lastfirst, */
+/*	CoTT_1.id "teacher_2_id", */
 	CoTT_1.users_dcid "teacher_2_id",
-	/* CoTT_1.lastFirst "teacher_2_lastFirst", */
+/*	CoTT_1.lastFirst "teacher_2_lastFirst", */
 	CoTT_2.users_dcid "teacher_3_id",
 	CoTT_3.users_dcid "teacher_4_id",
 	CoTT_4.users_dcid "teacher_5_id",
@@ -152,37 +158,37 @@ SELECT
 	sections.external_expression period,
 	'' subject,
 	CASE
-		WHEN terms.isyearrec = 1 THEN 'Year' /* || ' ' || terms.abbreviation */
-		ELSE terms.abbreviation
+		WHEN terms.isyearrec = 1 THEN  /* terms.yearid || terms.abbreviation || ' ' || */ 'Year' 
+		ELSE /* terms.yearid || */ terms.abbreviation
 	END term_name,
 	to_char(terms.firstday, 'MM/DD/YYYY') term_start,
-	to_char(terms.lastday, 'MM/DD/YYYY') term_end
+	to_char(terms.lastday, 'MM/DD/YYYY') term_end/* , 
+	terms.id */
 FROM
 	Sections
-	INNER JOIN (select * from My_SectionTeachers) My_SectionTeachers ON My_SectionTeachers.id = Sections.id
-	INNER JOIN terms ON terms.id = sections.termid
-	AND terms.yearid BETWEEN (
+	INNER JOIN (select * from My_SectionTeachers) My_SectionTeachers ON My_SectionTeachers.sectionid = Sections.id
+	INNER JOIN terms ON terms.id BETWEEN (
 		SELECT
-			low
+			low || '00'
 		FROM
 			Preferred_Range
 	)
 	AND (
 		SELECT
-			high
+			high || '99'
 		FROM
 			Preferred_Range
 	)
 	AND terms.schoolid = sections.schoolid
+	AND terms.id = sections.termid
 	INNER JOIN courses ON courses.course_number = sections.course_number
-	/* INNER JOIN My_SectionTeachers ON My_SectionTeachers.id = Sections.id */
+	INNER JOIN (select * from My_SectionTeachers ) My_SectionTeachers ON My_SectionTeachers.sectionid = Sections.id
 	LEFT JOIN (
 		SELECT
 			*
 		FROM
 			My_SectionTeachers
 	) PT ON PT.sectionid = My_SectionTeachers.sectionid
-	AND PT.priorityorder = 1
 	AND PT.primary_ = 'true'
 	LEFT JOIN (
 		SELECT
@@ -326,6 +332,7 @@ WHERE
 		'Team Planning 7',
 		'Team Planning 8'
 	)
+
 	/* ,
 	 /* 			'Lunch',
 	 'Lunch 6',
