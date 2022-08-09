@@ -91,7 +91,8 @@ My_Teachers AS (
 ),
 My_SectionTeachers AS (
 	SELECT
-		sectionteacher.sectionid,
+		sectionteacher.id,
+		sections.termid,
 		sections.schoolid,
 		sections.course_number,
 		sectionteacher.teacherid,
@@ -132,8 +133,7 @@ My_SectionTeachers AS (
 		) */
 )
 SELECT
-my_sectionteachers.id,
-	My_SectionTeachers.sectionid "sectionid",
+	My_SectionTeachers.sectionid "section.id",
 	My_SectionTeachers.course_number,
 	My_SectionTeachers.schoolid,
 /* 	PrTT.id "teacher_id", */
