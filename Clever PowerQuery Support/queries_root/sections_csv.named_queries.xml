@@ -91,8 +91,7 @@ My_Teachers AS (
 ),
 My_SectionTeachers AS (
 	SELECT
-		sectionteacher.id,
-		sections.termid,
+		sectionteacher.sectionid,
 		sections.schoolid,
 		sections.course_number,
 		sectionteacher.teacherid,
@@ -332,7 +331,6 @@ WHERE
 		'Team Planning 7',
 		'Team Planning 8'
 	)
-
 	/* ,
 	 /* 			'Lunch',
 	 'Lunch 6',
