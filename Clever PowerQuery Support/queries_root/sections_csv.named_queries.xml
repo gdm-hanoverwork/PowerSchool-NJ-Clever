@@ -105,8 +105,8 @@ My_SectionTeachers AS (
 				FROM
 					LEADROLE
 			) THEN 'true'
-			WHEN sectionteacher.roleid IS NULL
-			then 'true'
+			/* WHEN sectionteacher.roleid IS NULL
+			then 'true' */
 			ELSE 'false'
 		END AS primary_,
 		sectionteacher.start_date,
