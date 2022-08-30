@@ -51,7 +51,7 @@ first_day_or_today AS (
 SELECT
 	cc.schoolid school_id,
 	cc.sectionid section_id,
-	cc.studentid student_id
+	students.dcid student_id
 FROM
 	cc
 	LEFT JOIN students ON students.id = cc.studentid
