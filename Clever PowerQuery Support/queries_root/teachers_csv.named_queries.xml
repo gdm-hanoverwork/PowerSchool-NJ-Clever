@@ -34,9 +34,9 @@ WITH My_Schools AS (
 )
 SELECT
 	CASE
-		My_SCHOOLS.school_number
+		coalesce(My_SCHOOLS.school_number,users.homeschoolid)
 		WHEN 0 THEN 'DEFAULT_DISTRICT_OFFICE'
-		ELSE to_char(My_Schools.school_number)
+		ELSE to_char(coalesce(My_SCHOOLS.school_number,users.homeschoolid))
 	END "school_id",
 	users.dcid "teacher_id",
 	users.teachernumber "teacher_number",
@@ -73,7 +73,7 @@ WHERE
 	)
 ORDER BY
 	users.dcid,
-	MY_SCHOOLS.school_number
+	coalesce(My_SCHOOLS.school_number,users.homeschoolid)
 			]]>
 		</sql>
 	</query>
