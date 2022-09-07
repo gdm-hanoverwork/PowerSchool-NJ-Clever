@@ -24,6 +24,11 @@ WITH My_Schools AS (
 		SCHOOLS
 	WHERE
 		SCHOOL_NUMBER < 100
+	UNION
+	SELECT
+		0
+	FROM
+		DUAL
 )
 SELECT
 	CASE WHEN ( MY_Schools.school_number > 100 OR MY_Schools.school_number = 0) THEN 'DEFAULT_DISTRICT_OFFICE' ELSE to_char(MY_Schools.school_number) END "school_id",
