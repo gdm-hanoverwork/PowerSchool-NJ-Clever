@@ -2,7 +2,7 @@
 <plugin xmlns="http://plugin.powerschool.pearson.com"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     description="Clever PowerQuery Support" name="GDM - Clever Support (PQ)" 
-    version="22.08.30.01"
+    version="22.09.02.02"
     xsi:schemaLocation="http://plugin.powerschool.pearson.com plugin.xsd">
     <publisher name="Gregory Matyola">
         <contact email="greg.matyola@hanovertwpschools.org"/>
