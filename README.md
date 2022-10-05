@@ -13,4 +13,12 @@ I've updated my files a little bit, and there's one more minor tweak I think I n
 
 Also note the caveat that my files are pulling for New Jersey, so your state implementation will differ!
 
--- Greg
+-- Greg Matyola
+
+# Available on PowerSource (October 5, 2022):
+(a.k.a. the Self-Promotion section)
+
+I've also got a "plugin" for PowerSchool that might be useful if you're using PowerSchool, allowing you to upload the Clever badges into PowerSchool, and reveal (or not) the badges to Administration, Teachers or Parents.
+
+* Clever QR Import and Portal Display Plugin:
+  https://support.powerschool.com/exchange/view.action?download.id=1096
