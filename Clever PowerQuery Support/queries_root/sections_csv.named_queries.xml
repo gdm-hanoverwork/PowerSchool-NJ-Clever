@@ -81,11 +81,11 @@ My_Teachers AS (
 		schoolstaff.users_dcid,
 		users.lastfirst
 	FROM
-	schoolstaff 
-	INNER JOIN users ON schoolstaff.users_dcid = users.dcid
-	/* teachers *.
-	
-		/* 	WHERE
+		schoolstaff
+		INNER JOIN users ON schoolstaff.users_dcid = users.dcid
+		/* teachers *.
+		 
+		 /* 	WHERE
 		 teachers.status = 1
 		 */
 ),
@@ -106,42 +106,38 @@ My_SectionTeachers AS (
 					LEADROLE
 			) THEN 'true'
 			/* WHEN sectionteacher.roleid IS NULL
-			then 'true' */
+			 then 'true' */
 			ELSE 'false'
 		END AS primary_,
 		sectionteacher.start_date,
 		sectionteacher.end_date,
 		sectionteacher.allocation,
-		sectionteacher.priorityorder,
+		COALESCE(sectionteacher.priorityorder, 1) AS priorityorder,
 		sectionteacher.notes,
 		sectionteacher.sectionnickname
 	FROM
 		sectionteacher
 		INNER JOIN sections ON sections.id = sectionteacher.sectionid
-/* 	WHERE
-		sections.termid BETWEEN (
-			SELECT
-				low || '00'
-			FROM
-				Preferred_Range
-		)
 		AND (
-			SELECT
-				high || '99'
-			FROM
-				Preferred_Range
-		) */
+			SYSDATE BETWEEN sectionteacher.start_date
+			AND sectionteacher.end_date
+			OR (
+				SYSDATE NOT BETWEEN sectionteacher.start_date
+				AND sectionteacher.end_date
+				AND SectionTeacher.TeacherID = sections.Teacher
+			)
+		)
 )
 SELECT
-	My_SectionTeachers.sectionid "section.id",
-	My_SectionTeachers.course_number,
-	My_SectionTeachers.schoolid,
-/* 	PrTT.id "teacher_id", */
+	PT.sectionid "section.id",
+	PT.course_number,
+	PT.schoolid,
+	/* 	PrTT.id "teacher_id", */
 	PrTT.users_dcid "teacher_id",
-/*	PrTT.lastfirst, */
-/*	CoTT_1.id "teacher_2_id", */
+	/*	PrTT.lastfirst, */
+	/*	CoTT_1.id "teacher_2_id", */
 	CoTT_1.users_dcid "teacher_2_id",
-/*	CoTT_1.lastFirst "teacher_2_lastFirst", */
+	/*	CoTT_1.lastFirst "teacher_2_lastFirst", */
 	CoTT_2.users_dcid "teacher_3_id",
 	CoTT_3.users_dcid "teacher_4_id",
 	CoTT_4.users_dcid "teacher_5_id",
@@ -157,15 +153,19 @@ SELECT
 	sections.external_expression period,
 	'' subject,
 	CASE
-		WHEN terms.isyearrec = 1 THEN  /* terms.yearid || terms.abbreviation || ' ' || */ 'Year' 
-		ELSE /* terms.yearid || */ terms.abbreviation
+		WHEN terms.isyearrec = 1 THEN
+		/* terms.yearid || terms.abbreviation || ' ' || */
+		'Year'
+		ELSE
+		/* terms.yearid || */
+		terms.abbreviation
 	END term_name,
 	to_char(terms.firstday, 'MM/DD/YYYY') term_start,
-	to_char(terms.lastday, 'MM/DD/YYYY') term_end/* , 
-	terms.id */
+	to_char(terms.lastday, 'MM/DD/YYYY') term_end
+	/* , 
+	 terms.id */
 FROM
 	Sections
-	INNER JOIN (select * from My_SectionTeachers) My_SectionTeachers ON My_SectionTeachers.sectionid = Sections.id
 	INNER JOIN terms ON terms.id BETWEEN (
 		SELECT
 			low || '00'
@@ -181,14 +181,14 @@ FROM
 	AND terms.schoolid = sections.schoolid
 	AND terms.id = sections.termid
 	INNER JOIN courses ON courses.course_number = sections.course_number
-	INNER JOIN (select * from My_SectionTeachers ) My_SectionTeachers ON My_SectionTeachers.sectionid = Sections.id
-	LEFT JOIN (
+	INNER JOIN (
 		SELECT
 			*
 		FROM
 			My_SectionTeachers
-	) PT ON PT.sectionid = My_SectionTeachers.sectionid
+	) PT ON PT.sectionid = sections.id
 	AND PT.primary_ = 'true'
+	AND PT.priorityorder = 1
 	LEFT JOIN (
 		SELECT
 			*
@@ -200,7 +200,7 @@ FROM
 			*
 		FROM
 			My_SectionTeachers
-	) Co_1 ON Co_1.sectionid = My_SectionTeachers.sectionid
+	) Co_1 ON Co_1.sectionid = PT.sectionid
 	AND Co_1.primary_ = 'false'
 	AND Co_1.priorityorder = 1
 	LEFT JOIN (
@@ -214,7 +214,7 @@ FROM
 			*
 		FROM
 			My_SectionTeachers
-	) Co_2 ON Co_2.sectionid = My_SectionTeachers.sectionid
+	) Co_2 ON Co_2.sectionid = Co_1.sectionid
 	AND Co_2.primary_ = 'false'
 	AND Co_2.priorityorder = 2
 	LEFT JOIN (
@@ -228,7 +228,7 @@ FROM
 			*
 		FROM
 			My_SectionTeachers
-	) Co_3 ON Co_3.sectionid = My_SectionTeachers.sectionid
+	) Co_3 ON Co_3.sectionid = CO_2.sectionid
 	AND Co_3.primary_ = 'false'
 	AND Co_3.priorityorder = 3
 	LEFT JOIN (
@@ -242,7 +242,7 @@ FROM
 			*
 		FROM
 			My_SectionTeachers
-	) Co_4 ON Co_4.sectionid = My_SectionTeachers.sectionid
+	) Co_4 ON Co_4.sectionid = CO_3.sectionid
 	AND Co_4.primary_ = 'false'
 	AND Co_4.priorityorder = 4
 	LEFT JOIN (
@@ -256,7 +256,7 @@ FROM
 			*
 		FROM
 			My_SectionTeachers
-	) Co_5 ON Co_5.sectionid = My_SectionTeachers.sectionid
+	) Co_5 ON Co_5.sectionid = CO_4.sectionid
 	AND Co_5.primary_ = 'false'
 	AND Co_5.priorityorder = 5
 	LEFT JOIN (
@@ -270,7 +270,7 @@ FROM
 			*
 		FROM
 			My_SectionTeachers
-	) Co_6 ON Co_6.sectionid = My_SectionTeachers.sectionid
+	) Co_6 ON Co_6.sectionid = CO_5.sectionid
 	AND Co_6.primary_ = 'false'
 	AND Co_6.priorityorder = 6
 	LEFT JOIN (
@@ -284,7 +284,7 @@ FROM
 			*
 		FROM
 			My_SectionTeachers
-	) Co_7 ON Co_7.sectionid = My_SectionTeachers.sectionid
+	) Co_7 ON Co_7.sectionid = CO_6.sectionid
 	AND Co_7.primary_ = 'false'
 	AND Co_7.priorityorder = 7
 	LEFT JOIN (
@@ -298,7 +298,7 @@ FROM
 			*
 		FROM
 			My_SectionTeachers
-	) Co_8 ON Co_8.sectionid = My_SectionTeachers.sectionid
+	) Co_8 ON Co_8.sectionid = CO_7.sectionid
 	AND Co_8.primary_ = 'false'
 	AND Co_8.priorityorder = 8
 	LEFT JOIN (
@@ -312,7 +312,7 @@ FROM
 			*
 		FROM
 			My_SectionTeachers
-	) Co_9 ON Co_9.sectionid = My_SectionTeachers.sectionid
+	) Co_9 ON Co_9.sectionid = CO_8.sectionid
 	AND Co_9.primary_ = 'false'
 	AND Co_9.priorityorder = 9
 	LEFT JOIN (
@@ -341,8 +341,10 @@ WHERE
 	 'Study 8',
 	 'Study Hall' 
 	 /* Ignore the staff-scheduling courses, but not the student ones! */
+
 ORDER BY
-	My_sectionTeachers.sectionid,
+	PT.sectionid ASC,
+	CoTT_1.users_dcid DESC,
 	PT.teacherid
 		]]>
         </sql>
