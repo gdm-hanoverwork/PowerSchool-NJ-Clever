@@ -331,7 +331,8 @@ WHERE
 		'Team Planning 7',
 		'Team Planning 8'
 	)
-	/* ,
+	 /* Ignore the staff-scheduling courses, but not the student ones! */
+	/* , */
 	 /* 			'Lunch',
 	 'Lunch 6',
 	 'Lunch 7',
@@ -340,12 +341,33 @@ WHERE
 	 'Study 7',
 	 'Study 8',
 	 'Study Hall' 
-	 /* Ignore the staff-scheduling courses, but not the student ones! */
+	*/
+	/* The below filters out the sections without students... */
+	AND abs(PT.sectionid) IN (
+		SELECT
+			abs(cc.sectionid)
+		FROM
+			cc
+		WHERE
+			cc.termid BETWEEN (
+				SELECT
+					low || '00'
+				FROM
+					Preferred_Range
+			)
+			AND (
+				SELECT
+					high || '99'
+				FROM
+					Preferred_Range
+			)
+	)
 
 ORDER BY
 	PT.sectionid ASC,
 	CoTT_1.users_dcid DESC,
 	PT.teacherid
+
 		]]>
         </sql>
     </query>
