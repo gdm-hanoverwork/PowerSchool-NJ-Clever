@@ -34,10 +34,10 @@ WITH My_Schools AS (
 )
 SELECT
 	CASE
-		coalesce(My_SCHOOLS.school_number,users.homeschoolid)
+		coalesce(users.homeschoolid,0)
 		WHEN 0 THEN 'DEFAULT_DISTRICT_OFFICE'
 		ELSE to_char(coalesce(My_SCHOOLS.school_number,users.homeschoolid))
-	END "school_id",
+	END	"school_id",
 	users.dcid "teacher_id",
 	users.teachernumber "teacher_number",
 	s_nj_usr_x.StaffMemberID "State_Teacher_id",
@@ -56,7 +56,7 @@ FROM
 	LEFT JOIN gen groups ON groups.cat = 'groups'
 	AND groups.id = users.groupvalue
 	LEFT JOIN u_def_ext_users ON u_def_ext_users.usersdcid = users.dcid
-	LEFT JOIN My_Schools ON instr(users.canchangeschool, My_Schools.school_number) > 0
+	LEFT JOIN My_Schools ON users.homeschoolid= My_Schools.school_number
 WHERE
 	users.ptaccess = 1
 	AND users.dcid IN (
@@ -72,8 +72,7 @@ WHERE
 		OR u_def_ext_users.clever_exclude = 0
 	)
 ORDER BY
-	users.dcid,
-	coalesce(My_SCHOOLS.school_number,users.homeschoolid)
+	users.dcid
 			]]>
 		</sql>
 	</query>
