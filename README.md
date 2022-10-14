@@ -22,3 +22,6 @@ I've also got a "plugin" for PowerSchool that might be useful if you're using Po
 
 * Clever QR Import and Portal Display Plugin:
   https://support.powerschool.com/exchange/view.action?download.id=1096
+
+# Update ( October 10, 2022 ) 
+I've fixed both the Teachers Export (Teachers now will only export for their "home school"), and Sections (Sections will not extract if students have not ever been enrolled in the sections).
