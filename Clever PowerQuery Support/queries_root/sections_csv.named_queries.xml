@@ -119,10 +119,10 @@ My_SectionTeachers AS (
 		sectionteacher
 		INNER JOIN sections ON sections.id = sectionteacher.sectionid
 		AND (
-			SYSDATE BETWEEN sectionteacher.start_date
+			trunc(SYSDATE) BETWEEN sectionteacher.start_date
 			AND sectionteacher.end_date
 			OR (
-				SYSDATE NOT BETWEEN sectionteacher.start_date
+				trunc(SYSDATE) NOT BETWEEN sectionteacher.start_date
 				AND sectionteacher.end_date
 				AND SectionTeacher.TeacherID = sections.Teacher
 			)
