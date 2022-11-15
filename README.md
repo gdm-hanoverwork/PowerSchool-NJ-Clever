@@ -33,5 +33,5 @@ I've been working on geting my Students query cleaned up for "public consumption
 * https://github.com/sriehl/Clever-PowerQueries
 
 # Updated Student Queries to "Full Code" version (v2)
-Added CHECK_ME points (in students_csv.named_queries.xml) where adaptations / choices will need to be made.
-This version WILL EXPORT Data Access Accounts as 'family' to Clever.
+* Added CHECK_ME points (in students_csv.named_queries.xml) where adaptations / choices will need to be made.
+* This version WILL EXPORT 'Data Access Accounts' as 'family' to Clever. Please alter that part of the query if you needs differ!
