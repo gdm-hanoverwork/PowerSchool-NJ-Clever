@@ -31,3 +31,7 @@ I've fixed both the Teachers Export (Teachers now will only export for their "ho
 # Update ( November 15, 2022 )
 I've been working on geting my Students query cleaned up for "public consumption", and found the probable genesis of my queries:
 * https://github.com/sriehl/Clever-PowerQueries
+
+# Updated Student Queries to "Full Code" version (v2)
+Added CHECK_ME points (in students_csv.named_queries.xml) where adaptations / choices will need to be made.
+This version WILL EXPORT Data Access Accounts as 'family' to Clever.
