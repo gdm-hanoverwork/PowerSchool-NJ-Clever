@@ -38,6 +38,18 @@
 				WITH student_race AS (
 					SELECT
 						studentid,
+						/* 
+						SOME TRANSLATION MAY BE REQUIRED
+						**CHECK_ME**
+						CASE
+						racecd
+						WHEN '01' THEN 'I'
+						WHEN '02' THEN 'A'
+						WHEN '04' THEN 'B'
+						WHEN '05' THEN 'W'
+						WHEN '06' THEN 'P'
+						END racecd AS race 
+						*/
 						racecd race
 					FROM
 						studentrace
@@ -88,19 +100,20 @@
 					FROM
 						pssis_person_email
 				),
-				s_con AS (
-/* Code from PSSIS_Stu_Contact_Act  here, except for the join on StudentContactDetail was altered.... */
-						INNER JOIN studentContactDetail scd ON sca.studentcontactassocid = scd.studentcontactassocid
-						AND scd.isactive = 1
-						AND COALESCE(scd.startdate, SYSDATE) <= SYSDATE /* added */
-						AND COALESCE(scd.enddate, SYSDATE) >= SYSDATE /* added */
-/* Remainder of code from PSSIS_Stu_Contact_act goes here */				),
 				contacts AS (
 					SELECT
 						stucon.studentdcid,
 						stucon.currcontactrelationship contact_relationship,
 						CASE
 							WHEN stucon.iscustodial = 1 THEN 'family'
+							/* 
+			 				I'm considering "Has Data Access" to be 'family' Your mileage may differ...
+			 				
+			 				And putting it immediately after iscustodial means it trumps lives-with and emergency...
+			 				
+			 				**CHECK_ME**
+			 				*/
+							WHEN guardianstudent.studentsdcid = stucon.studentdcid THEN 'family'
 							WHEN stucon.liveswithflg = 1 THEN 'lives-with'
 							WHEN stucon.isemergency = 1 THEN 'emergency'
 							ELSE 'other'
@@ -114,12 +127,7 @@
 							pcas_emailcontact.emailaddress
 						) AS emailaddress
 					FROM
-						(
-							SELECT
-								*
-							FROM
-								s_con
-						) stucon
+						pssis_stu_contact_act stucon
 						LEFT JOIN phones ON phones.persondcid = stucon.contactpersondcid
 						AND phones.phnrank = 1
 						LEFT JOIN guardianpersonassoc ON guardianpersonassoc.personid = stucon.contactpersonid
@@ -136,16 +144,31 @@
 								con_email
 						) con_email ON person.dcid = con_email.persondcid
 						AND COALESCE(con_email.emrank, 0) = 1
-						/* 	WHERE
-						 stucon.contactfirstname IS NOT NULL
-						 AND guardianstudent.guardianstudentid IS NOT NULL */
-					WHERE
-						COALESCE(stucon.iscustodial, 1) = 1
+						WHERE
+						    stucon.contactfirstname IS NOT NULL
+						    AND (
+						     /* 
+						      I only want 'family' contacts going over to Clever
+						      **CHECK_ME**
+						     */
+						     stucon.iscustodial = 1
+						     /* 
+						      I'm considering 'Has Data Access to student' to be 'family' enough...
+						      **CHECK_ME**
+						     */
+						     OR guardianstudent.studentsdcid = stucon.studentdcid
+						    )
+						    /* AND guardianstudent.guardianstudentid IS NOT NULL */
+						    AND trunc(SYSDATE) BETWEEN COALESCE(
+						    	stucon.relationshipstartdate,
+						    	trunc(SYSDATE)
+						    )
+						    AND COALESCE(stucon.relationshipenddate, trunc(SYSDATE))
 					ORDER BY
 						stucon.contactpriorityorder
 				)
 				SELECT
-					students.schoolid school_id,
+					students.enrollment_schoolid school_id,
 					students.dcid student_id,
 					to_char(students.student_number) student_number,
 					students.state_studentnumber state_id,
@@ -162,6 +185,7 @@
 					students.gender gender,
 					to_char(students.dob, 'MM/DD/YYYY') dob,
 					CASE
+						/* When we have more than one race code, then we report a MultiRacial Student */
 						WHEN (
 							SELECT
 								COUNT(1)
@@ -183,6 +207,10 @@
 						WHEN students.fedethnicity = 1 THEN 'Y'
 						ELSE 'N'
 					END Hispanic_latino,
+					/*
+					**CHECK_ME**
+					This code below will depend on how your state determines yout ELL_STATUS...
+	 				*/
 					'' ell_status,
 					CASE
 						students.lunchstatus
@@ -191,6 +219,10 @@
 						ELSE 'N'
 					END frl_status,
 					CASE
+					/*
+		 			**CHECK_ME**
+		 			This code below will depend on how your state determines yout IEP_STATUS...
+		 			*/
 						WHEN s_nj_stu_x.iep_begin_date IS NULL
 						AND s_nj_stu_x.iep_end_date IS NULL THEN 'N'
 						WHEN SYSDATE BETWEEN COALESCE(s_nj_stu_x.iep_begin_date, SYSDATE)
@@ -208,10 +240,22 @@
 					contacts.contact_phone contact_phone,
 					contacts.emailaddress contact_email,
 					contacts.contactpersondcid contact_sis_id,
+	/*
+	 **CHECK_ME**
+	 This code below will depend on how your student's 'default username' is stored.
+	 */
 					studentemail.email username,
+	/*
+	 **CHECK_ME**
+	 This code below will depend on how your student's 'default password' is stored / generated.
+	 */
 					'id' || LPAD(students.student_number, 7, '0') AS password
 				FROM
 					students
+	/*
+	 **CHECK_ME**
+	 Below Import is State Dependent!
+	 */
 					LEFT JOIN s_nj_stu_x ON s_nj_stu_x.studentsdcid = students.dcid
 					LEFT JOIN (
 						SELECT
@@ -235,9 +279,12 @@
 						students.enroll_status = 0
 						OR (
 							students.enroll_status = -1
-							AND students.entrydate <= SYSDATE + 14
+							AND students.entrydate <= TRUNC(SYSDATE) + 14
 						)
 					)
+				ORDER BY
+					students.dcid,
+					contacts.contactpersondcid
 			]]>
 		</sql>
 	</query>
