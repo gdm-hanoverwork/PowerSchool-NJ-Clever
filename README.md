@@ -27,3 +27,7 @@ I've also got a "plugin" for PowerSchool that might be useful if you're using Po
 
 # Update ( October 10, 2022 ) 
 I've fixed both the Teachers Export (Teachers now will only export for their "home school"), and Sections (Sections will not extract if students have not ever been enrolled in the sections).
+
+# Update ( November 15, 2022 )
+I've been working on geting my Students query cleaned up for "public consumption", and found the probable genesis of my queries:
+* https://github.com/sriehl/Clever-PowerQueries
