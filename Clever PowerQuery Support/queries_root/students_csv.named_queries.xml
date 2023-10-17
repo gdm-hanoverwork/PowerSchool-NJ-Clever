@@ -94,7 +94,7 @@
 						dense_rank() over (
 							PARTITION BY persondcid
 							ORDER BY
-								emailaddresspriorityorder
+								pssis_person_email.ISPRIMARYEMAILADDRESS DESC, pssis_person_email.EMAILADDRESSPRIORITYORDER
 						) AS emrank
 					FROM
 						pssis_person_email
