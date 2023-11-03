@@ -83,7 +83,7 @@ My_Teachers AS (
 	FROM
 		schoolstaff
 		INNER JOIN users ON schoolstaff.users_dcid = users.dcid
-		/* teachers *.
+		/* teachers */
 		 
 		 /* 	WHERE
 		 teachers.status = 1
@@ -112,7 +112,19 @@ My_SectionTeachers AS (
 		sectionteacher.start_date,
 		sectionteacher.end_date,
 		sectionteacher.allocation,
-		COALESCE(sectionteacher.priorityorder, 1) AS priorityorder,
+		CASE
+			WHEN sectionteacher.roleId = (
+				SELECT
+					roleId
+				FROM
+					LEADROLE
+			) THEN 1
+			ELSE ROW_NUMBER() OVER (
+				PARTITION BY Sections.ID
+				ORDER BY
+					NULL
+			)
+		END AS PriorityOrder,
 		sectionteacher.notes,
 		sectionteacher.sectionnickname
 	FROM
@@ -129,7 +141,7 @@ My_SectionTeachers AS (
 		)
 )
 SELECT
-	PT.sectionid "section.id",
+	PT.sectionid "sections_id",
 	PT.course_number,
 	PT.schoolid,
 	/* 	PrTT.id "teacher_id", */
@@ -331,9 +343,9 @@ WHERE
 		'Team Planning 7',
 		'Team Planning 8'
 	)
-	 /* Ignore the staff-scheduling courses, but not the student ones! */
+	/* Ignore the staff-scheduling courses, but not the student ones! */
 	/* , */
-	 /* 			'Lunch',
+	/* 			'Lunch',
 	 'Lunch 6',
 	 'Lunch 7',
 	 'Lunch 8',
@@ -341,7 +353,7 @@ WHERE
 	 'Study 7',
 	 'Study 8',
 	 'Study Hall' 
-	*/
+	 */
 	/* The below filters out the sections without students... */
 	AND abs(PT.sectionid) IN (
 		SELECT
@@ -362,7 +374,8 @@ WHERE
 					Preferred_Range
 			)
 	)
-
+	/* AND Co_1.priorityorder = 1
+	OR sections.id IN (29921) */
 ORDER BY
 	PT.sectionid ASC,
 	CoTT_1.users_dcid DESC,
