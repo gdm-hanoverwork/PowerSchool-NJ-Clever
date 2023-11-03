@@ -35,3 +35,6 @@ I've been working on geting my Students query cleaned up for "public consumption
 # Updated Student Queries to "Full Code" version (v2)
 * Added CHECK_ME points (in students_csv.named_queries.xml) where adaptations / choices will need to be made.
 * This version WILL EXPORT 'Data Access Accounts' as 'family' to Clever. Please alter that part of the query if you needs differ!
+
+# Updated ( November 3, 2023 )
+* Fixed a bug where two co-teachers in a section would both have an equal priority order. Should be fixed now.
