@@ -374,8 +374,7 @@ WHERE
 					Preferred_Range
 			)
 	)
-	/* AND Co_1.priorityorder = 1
-	OR sections.id IN (29921) */
+
 ORDER BY
 	PT.sectionid ASC,
 	CoTT_1.users_dcid DESC,
