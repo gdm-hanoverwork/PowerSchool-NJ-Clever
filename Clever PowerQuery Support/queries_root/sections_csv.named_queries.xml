@@ -28,357 +28,129 @@
         </columns>
         <sql>
             <![CDATA[
-WITH LEADROLE AS (
-	SELECT
-		ROLEDEF.ID AS roleId
-	FROM
-		ROLEDEF
-	WHERE
-		ROLEDEF.ROLEKEY = 'com.pearson.powerschool.coteach.primary.teacher'
-		/* Only grab the Lead Role for Primary Teachers... */
-),
-CO_TEACHER_ROLES AS (
-	SELECT
-		roledef.id,
-		roledef.name,
-		roledef.rolekey
-	FROM
-		roledef
-	WHERE
-		/* Trim the extra fat out first... */
-		ROLEKEY LIKE 'com.pearson.powerschool.coteach.%'
-		/* Below is the primary teacher role. */
-		AND ROLEKEY != 'com.pearson.powerschool.coteach.primary.teacher'
-		/* 	Below are the 'standard' co-teacher roles. */
-		AND ROLEKEY NOT IN (
-			'com.pearson.powerschool.coteach.class.observer',
-			'com.pearson.powerschool.coteach.job.share.teacher',
-			'com.pearson.powerschool.coteach.primary.teacher',
-			'com.pearson.powerschool.coteach.teacher.aide'
-		)
-		/* Below is one created at our district, as an example, I've commented it out
-		 If you know which one you want to whack, go for it. */
-		/* 	AND ROLEKEY != 'com.pearson.powerschool.coteach.co.teacher' */
-		/* But I haven't used this to exclude at all... */
-),
-Preferred_Range AS (
-	SELECT
-		/* Intended to filter out based on what is the current year! */
-		to_char(VALUE)
-		/* +1 */
-		AS high,
-		to_char(VALUE)
-		/* -1 */
-		AS low
-	FROM
-		prefs
-	WHERE
-		NAME = 'coursearchiveyear'
-),
-My_Teachers AS (
-	SELECT
-		schoolstaff.id,
-		schoolstaff.users_dcid,
-		users.lastfirst
-	FROM
-		schoolstaff
-		INNER JOIN users ON schoolstaff.users_dcid = users.dcid
-		/* teachers */
-		 
-		 /* 	WHERE
-		 teachers.status = 1
-		 */
-),
-My_SectionTeachers AS (
-	SELECT
-		sectionteacher.id,
-		sections.termid,
-		sections.schoolid,
-		sections.course_number,
-		sectionteacher.teacherid,
-		sectionteacher.sectionid,
-		sectionteacher.roleid,
-		CASE
-			WHEN sectionteacher.roleId = (
-				SELECT
-					roleId
-				FROM
-					LEADROLE
-			) THEN 'true'
-			/* WHEN sectionteacher.roleid IS NULL
-			 then 'true' */
-			ELSE 'false'
-		END AS primary_,
-		sectionteacher.start_date,
-		sectionteacher.end_date,
-		sectionteacher.allocation,
-		CASE
-			WHEN sectionteacher.roleId = (
-				SELECT
-					roleId
-				FROM
-					LEADROLE
-			) THEN 1
-			ELSE ROW_NUMBER() OVER (
-				PARTITION BY Sections.ID
-				ORDER BY
-					NULL
-			)
-		END AS PriorityOrder,
-		sectionteacher.notes,
-		sectionteacher.sectionnickname
-	FROM
-		sectionteacher
-		INNER JOIN sections ON sections.id = sectionteacher.sectionid
-		AND (
-			trunc(SYSDATE) BETWEEN sectionteacher.start_date
-			AND sectionteacher.end_date
-			OR (
-				trunc(SYSDATE) NOT BETWEEN sectionteacher.start_date
-				AND sectionteacher.end_date
-				AND SectionTeacher.TeacherID = sections.Teacher
-			)
-		)
-)
 SELECT
-	PT.sectionid "sections_id",
-	PT.course_number,
-	PT.schoolid,
-	/* 	PrTT.id "teacher_id", */
-	PrTT.users_dcid "teacher_id",
-	/*	PrTT.lastfirst, */
-	/*	CoTT_1.id "teacher_2_id", */
-	CoTT_1.users_dcid "teacher_2_id",
-	/*	CoTT_1.lastFirst "teacher_2_lastFirst", */
-	CoTT_2.users_dcid "teacher_3_id",
-	CoTT_3.users_dcid "teacher_4_id",
-	CoTT_4.users_dcid "teacher_5_id",
-	CoTT_5.users_dcid "teacher_6_id",
-	CoTT_6.users_dcid "teacher_7_id",
-	CoTT_7.users_dcid "teacher_8_id",
-	CoTT_8.users_dcid "teacher_9_id",
-	CoTT_9.users_dcid "teacher_10_id",
-	sections.section_number,
-	'' grade,
-	courses.course_name,
-	'' course_description,
-	sections.external_expression period,
-	'' subject,
-	CASE
-		WHEN terms.isyearrec = 1 THEN
-		/* terms.yearid || terms.abbreviation || ' ' || */
-		'Year'
-		ELSE
-		/* terms.yearid || */
-		terms.abbreviation
-	END term_name,
-	to_char(terms.firstday, 'MM/DD/YYYY') term_start,
-	to_char(terms.lastday, 'MM/DD/YYYY') term_end
-	/* , 
-	 terms.id */
+	Clever.SectionID,
+	Clever.Course_Number,
+	Clever.SchoolID,
+	Clever.Teacher_ID,
+	Clever.Teacher_2_ID,
+	Clever.Teacher_3_ID,
+	Clever.Teacher_4_ID,
+	Clever.Teacher_5_ID,
+	Clever.Teacher_6_ID,
+	Clever.Teacher_7_ID,
+	Clever.Teacher_8_ID,
+	Clever.Teacher_9_ID,
+	Clever.Teacher_10_ID,
+	Clever.Section_Number,
+	Clever.grade,
+	Clever.Course_Name,
+	Clever.course_description,
+	Clever.period,
+	Clever.subject,
+	Clever.Term_Name,
+	Clever.Term_Start,
+	Clever.Term_End
 FROM
-	Sections
-	INNER JOIN terms ON terms.id BETWEEN (
+	(
 		SELECT
-			low || '00'
+			Sections.ID AS SectionID,
+			Sections.Course_Number,
+			Sections.Section_Number,
+			sections.external_expression period,
+			Courses.Course_Name,
+			Sections.SchoolID,
+			Teachers.Users_DCID,
+			CASE
+				WHEN Terms.isYearRec = 1 THEN 'Year'
+				ELSE Terms.Abbreviation
+			END AS Term_Name,
+			TO_CHAR(Terms.FirstDay, 'MM/DD/YYYY') AS Term_Start,
+			TO_CHAR(Terms.LastDay, 'MM/DD/YYYY') AS Term_End,
+			CASE
+				WHEN RoleDef.RoleKey = 'com.pearson.powerschool.coteach.primary.teacher' THEN 1
+				ELSE ROW_NUMBER() OVER (
+					PARTITION BY Sections.ID
+					ORDER BY
+						NULL
+				)
+			END AS PriorityOrder,
+			to_char(sections.grade_level) AS grade,
+			'' subject,
+			'' course_description
 		FROM
-			Preferred_Range
-	)
-	AND (
-		SELECT
-			high || '99'
-		FROM
-			Preferred_Range
-	)
-	AND terms.schoolid = sections.schoolid
-	AND terms.id = sections.termid
-	INNER JOIN courses ON courses.course_number = sections.course_number
-	INNER JOIN (
-		SELECT
-			*
-		FROM
-			My_SectionTeachers
-	) PT ON PT.sectionid = sections.id
-	AND PT.primary_ = 'true'
-	AND PT.priorityorder = 1
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_Teachers
-	) PrTT ON PrTT.id = PT.teacherid
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_SectionTeachers
-	) Co_1 ON Co_1.sectionid = PT.sectionid
-	AND Co_1.primary_ = 'false'
-	AND Co_1.priorityorder = 1
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_Teachers
-	) CoTT_1 ON CoTT_1.id = Co_1.teacherid
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_SectionTeachers
-	) Co_2 ON Co_2.sectionid = Co_1.sectionid
-	AND Co_2.primary_ = 'false'
-	AND Co_2.priorityorder = 2
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_Teachers
-	) CoTT_2 ON CoTT_2.id = Co_2.teacherid
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_SectionTeachers
-	) Co_3 ON Co_3.sectionid = CO_2.sectionid
-	AND Co_3.primary_ = 'false'
-	AND Co_3.priorityorder = 3
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_Teachers
-	) CoTT_3 ON CoTT_3.id = Co_3.teacherid
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_SectionTeachers
-	) Co_4 ON Co_4.sectionid = CO_3.sectionid
-	AND Co_4.primary_ = 'false'
-	AND Co_4.priorityorder = 4
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_Teachers
-	) CoTT_4 ON CoTT_4.id = Co_4.teacherid
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_SectionTeachers
-	) Co_5 ON Co_5.sectionid = CO_4.sectionid
-	AND Co_5.primary_ = 'false'
-	AND Co_5.priorityorder = 5
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_Teachers
-	) CoTT_5 ON CoTT_5.id = Co_5.teacherid
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_SectionTeachers
-	) Co_6 ON Co_6.sectionid = CO_5.sectionid
-	AND Co_6.primary_ = 'false'
-	AND Co_6.priorityorder = 6
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_Teachers
-	) CoTT_6 ON CoTT_6.id = Co_6.teacherid
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_SectionTeachers
-	) Co_7 ON Co_7.sectionid = CO_6.sectionid
-	AND Co_7.primary_ = 'false'
-	AND Co_7.priorityorder = 7
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_Teachers
-	) CoTT_7 ON CoTT_7.id = Co_7.teacherid
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_SectionTeachers
-	) Co_8 ON Co_8.sectionid = CO_7.sectionid
-	AND Co_8.primary_ = 'false'
-	AND Co_8.priorityorder = 8
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_Teachers
-	) CoTT_8 ON CoTT_8.id = Co_8.teacherid
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_SectionTeachers
-	) Co_9 ON Co_9.sectionid = CO_8.sectionid
-	AND Co_9.primary_ = 'false'
-	AND Co_9.priorityorder = 9
-	LEFT JOIN (
-		SELECT
-			*
-		FROM
-			My_Teachers
-	) CoTT_9 ON CoTT_9.id = Co_9.teacherid
-WHERE
-	courses.course_name NOT IN (
-		'Cafe Duty',
-		'Hall Duty/Coverage',
-		'Staff Lunch',
-		'Staff Prep',
-		'Team Planning 6',
-		'Team Planning 7',
-		'Team Planning 8'
-	)
-	/* Ignore the staff-scheduling courses, but not the student ones! */
-	/* , */
-	/* 			'Lunch',
-	 'Lunch 6',
-	 'Lunch 7',
-	 'Lunch 8',
-	 'Study 6',
-	 'Study 7',
-	 'Study 8',
-	 'Study Hall' 
-	 */
-	/* The below filters out the sections without students... */
-	AND abs(PT.sectionid) IN (
-		SELECT
-			abs(cc.sectionid)
-		FROM
-			cc
+			Sections
+			JOIN Courses ON LOWER(Sections.Course_Number) = LOWER(Courses.Course_Number)
+			JOIN Prefs Prefs ON Prefs.Name = 'coursearchiveyear'
+			CROSS JOIN RoleDef
+			JOIN SectionTeacher ON Sections.ID = SectionTeacher.SectionID
+			AND RoleDef.ID = SectionTeacher.RoleID
+			JOIN Teachers ON SectionTeacher.TeacherID = Teachers.ID
+			JOIN Terms ON Sections.SchoolID = Terms.SchoolID
+			AND Sections.TermID = Terms.ID
+			AND TO_NUMBER(Prefs.Value) = Terms.YearID
 		WHERE
-			cc.termid BETWEEN (
-				SELECT
-					low || '00'
-				FROM
-					Preferred_Range
+			/* Ensure current assignment or lead teacher only */
+			(
+				TRUNC(SYSDATE) BETWEEN SectionTeacher.Start_Date
+				AND SectionTeacher.End_Date
+				OR Sections.Teacher = SectionTeacher.TeacherID
 			)
-			AND (
-				SELECT
-					high || '99'
-				FROM
-					Preferred_Range
+			/*  Exclude undesired courses - best practice would be to use a (custom) field
+			 to track courses like these so you don't have to update the SQL */
+			AND Courses.Course_Name NOT IN (
+				'Cafe Duty',
+				'Hall Duty/Coverage',
+				'Staff Lunch',
+				'Staff Pref',
+				'Team Planning 6',
+				'Team Planning 7',
+				'Team Planning 8'
 			)
-	)
-
+			/*  Exclude undesired co-teaching roles - DO NOT put the Lead Teacher key here!
+			 The RoleDef.Name is also indexed, so you might prefer to use that for checking
+			 vs. the keys, especially if you plan to include customized co-teaching roles. */
+			AND RoleDef.RoleKey NOT IN (
+				'com.pearson.powerschool.coteach.class.observer',
+				/* 'com.pearson.powerschool.coteach.job.share.teacher', */
+				'com.pearson.powerschool.coteach.teacher.aide'
+			)
+			/*  Ensures at least one student is enrolled - optionally, you can use the
+			 Sections.No_of_Students field, but that depends on calculations done
+			 by Reset Class Counts/nightly process/etc. */
+			AND EXISTS (
+				SELECT
+					1
+				FROM
+					CC
+				WHERE
+					CC.SectionID = Sections.ID
+			)
+			/*
+			 AND EXISTS ( select 1 from CC where sectionteacher.sectionid = abs(cc.sectionid) )
+			 */
+		ORDER BY
+			Sections.ID,
+			CASE
+				WHEN RoleDef.RoleKey = 'com.pearson.powerschool.coteach.primary.teacher' THEN 1
+				ELSE Teachers.Users_DCID
+			END
+	) PIVOT (
+		MAX(Users_DCID) FOR PriorityOrder IN (
+			1 AS teacher_id,
+			2 AS teacher_2_id,
+			3 AS teacher_3_id,
+			4 AS teacher_4_id,
+			5 AS teacher_5_id,
+			6 AS teacher_6_id,
+			7 AS teacher_7_id,
+			8 AS teacher_8_id,
+			9 AS teacher_9_id,
+			10 AS teacher_10_id
+		)
+	) Clever
 ORDER BY
-	PT.sectionid ASC,
-	CoTT_1.users_dcid DESC,
-	PT.teacherid
+	sectionid
 
 		]]>
         </sql>
